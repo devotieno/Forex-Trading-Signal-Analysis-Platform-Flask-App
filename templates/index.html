@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC-USD Forex Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .refresh-btn {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .refresh-btn:hover {
+            background-color: #005bb5;
+        }
+        .intervals-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* Four equal columns */
+            gap: 20px; /* Space between columns */
+            margin: 20px 0;
+        }
+        .interval-section {
+            background-color: white;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .interval-section:hover {
+    box-shadow: 0 8px 16px 0 rgba(255, 253, 253, 0.678);
+  }
+        .interval-section h2 {
+            color: #0066cc;
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .signal-strong-buy { color: green; font-weight: bold; }
+        .signal-weak-buy { color: darkgreen; }
+        .signal-neutral { color: gray; }
+        .signal-weak-sell { color: darkred; }
+        .signal-strong-sell { color: red; font-weight: bold; }
+        /* Responsive design for smaller screens */
+        @media (max-width: 1200px) {
+            .intervals-container {
+                grid-template-columns: repeat(2, 1fr); /* Two columns on medium screens */
+            }
+        }
+        @media (max-width: 600px) {
+            .intervals-container {
+                grid-template-columns: 1fr; /* One column on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>USD-CAD Analysis</h1>
+    <button class="refresh-btn" onclick="window.location.reload()">Refresh Data</button>
+    <div class="intervals-container">
+        {% for interval in intervals %}
+            <div class="interval-section">
+                <h2>{{ interval.upper() }} Interval</h2>
+                {% if 'error' in results[interval] %}
+                    <p class="error">Error: {{ results[interval]['error'] }}</p>
+                {% else %}
+                    <p><strong>Timestamp:</strong> {{ results[interval]['latest_time'] }}</p>
+                    <p><strong>Current Price:</strong> {{ "%.5f"|format(results[interval]['current_price']) }}</p>
+                    <p><strong>Signal Value:</strong> {{ "%.2f"|format(results[interval]['latest_signal']) }}</p>
+                    <p><strong>Trading Signal:</strong> 
+                        <span class="signal-{{ results[interval]['signal_interpretation']|lower|replace(' ', '-') }}">
+                            {{ results[interval]['signal_interpretation'] }}
+                        </span>
+                    </p>
+                    <p><strong>For BUY Position:</strong></p>
+                    <ul>
+                        <li>Stop Loss: {{ "%.5f"|format(results[interval]['stop_loss_long']) }}</li>
+                        <li>Take Profit: {{ "%.5f"|format(results[interval]['take_profit_long']) }}</li>
+                    </ul>
+                    <p><strong>For SELL Position:</strong></p>
+                    <ul>
+                        <li>Stop Loss: {{ "%.5f"|format(results[interval]['stop_loss_short']) }}</li>
+                        <li>Take Profit: {{ "%.5f"|format(results[interval]['take_profit_short']) }}</li>
+                    </ul>
+                    <p><strong>Market Regime:</strong> {{ results[interval]['market_regime'] }}</p>
+                    <p><strong>Backtest Results:</strong></p>
+                    <ul>
+                        <li>Total Return: {{ "%.2f"|format(results[interval]['backtest']['total_return']) }}%</li>
+                        <li>Total Trades: {{ results[interval]['backtest']['total_trades'] }}</li>
+                        <li>Win Rate: {{ "%.2f"|format(results[interval]['backtest']['win_rate']) }}%</li>
+                        <li>Sharpe Ratio: {{ "%.2f"|format(results[interval]['backtest']['sharpe_ratio']) }}</li>
+                        <li>Max Drawdown: {{ "%.2f"|format(results[interval]['backtest']['max_drawdown']) }}%</li>
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    <footer>
+          <p>Developed by Brian Okoth @2025</p>
+        </footer>
+</body>
+</html>
