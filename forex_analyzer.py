@@ -52,23 +52,43 @@ class EnhancedForexAnalyzer:
 
     def load_data(self, data: pd.DataFrame) -> None:
         required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+        
+        # Debug: Log the DataFrame's columns and index type
+        print(f"DataFrame columns: {data.columns}")
+        print(f"Columns type: {type(data.columns)}")
+        print(f"Index type: {type(data.index)}")
+        
+        # Check if data has a MultiIndex
         if isinstance(data.columns, pd.MultiIndex):
-            ticker = 'CAD=X'
-            data = data.xs(ticker, level='Ticker', axis=1, drop_level=True)
-            data.columns = [col.capitalize() for col in data.columns]
-            if 'Adj Close' in data.columns:
-                data = data.drop(columns=['Adj Close'])
+            # If MultiIndex, flatten it by selecting the first level (since we expect single-ticker data)
+            print("MultiIndex detected. Flattening to single-level columns.")
+            data = data.copy()
+            data.columns = [col[1] if isinstance(col, tuple) else col for col in data.columns]
+        
+        # Ensure columns are capitalized
+        data.columns = [col.capitalize() for col in data.columns]
+        if 'Adj Close' in data.columns:
+            data = data.drop(columns=['Adj Close'])
+
+        # Validate required columns
         if not all(col in data.columns for col in required_columns):
             raise ValueError(f"Data must contain columns: {required_columns}")
+        
+        # Ensure index is DatetimeIndex
         if not isinstance(data.index, pd.DatetimeIndex):
             data.index = pd.to_datetime(data.index)
+        
+        # Handle missing values
         if data.isnull().any().any():
             missing_pct = data.isnull().mean().mean() * 100
             print(f"Warning: Data contains {missing_pct:.2f}% missing values. Applying interpolation.")
             data = self._preprocess_missing_data(data)
+        
+        # Validate data length
         min_required_points = max(self.settings.values()) * 3
         if len(data) < min_required_points:
             raise ValueError(f"Insufficient data points. Need at least {min_required_points}.")
+        
         self.data = data.copy()
         self._detect_market_regime()
         if self.optimize_params:
