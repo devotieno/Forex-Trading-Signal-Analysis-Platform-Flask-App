@@ -57,13 +57,15 @@ class EnhancedForexAnalyzer:
         print(f"DataFrame columns: {data.columns}")
         print(f"Columns type: {type(data.columns)}")
         print(f"Index type: {type(data.index)}")
+        print(f"First few index values: {data.index[:5]}")
+        print(f"Last few index values: {data.index[-5:]}")
         
         # Check if data has a MultiIndex
         if isinstance(data.columns, pd.MultiIndex):
-            # If MultiIndex, flatten it by selecting the first level (since we expect single-ticker data)
-            print("MultiIndex detected. Flattening to single-level columns.")
+            print("MultiIndex detected. Flattening to single-level columns using price field.")
             data = data.copy()
-            data.columns = [col[1] if isinstance(col, tuple) else col for col in data.columns]
+            price_level = data.columns.names.index('Price') if 'Price' in data.columns.names else 1
+            data.columns = [col[price_level] if isinstance(col, tuple) else col for col in data.columns]
         
         # Ensure columns are capitalized
         data.columns = [col.capitalize() for col in data.columns]
@@ -74,9 +76,12 @@ class EnhancedForexAnalyzer:
         if not all(col in data.columns for col in required_columns):
             raise ValueError(f"Data must contain columns: {required_columns}")
         
-        # Ensure index is DatetimeIndex
+        # Ensure index is DatetimeIndex and timezone-naive
         if not isinstance(data.index, pd.DatetimeIndex):
             data.index = pd.to_datetime(data.index)
+        if data.index.tz is not None:
+            print("Timezone-aware index detected. Converting to timezone-naive.")
+            data.index = data.index.tz_convert('UTC').tz_localize(None)
         
         # Handle missing values
         if data.isnull().any().any():
